@@ -294,3 +294,4 @@ elaborated upon later.
 )
 
 ## How to Run
+Please execute the file "RunMe_MPC.m" individually for all four examples located in the "Examples" folder.
