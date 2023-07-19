@@ -200,37 +200,29 @@ hyperparameters. The parameters are as follows:
     system proceeds to the next time step, this optimization will be
     repeated.
 
-    <figure id="fig:MPC-params">
-
-    <figcaption>General recommendations for choosing MPC parameter
-    values</figcaption>
-    </figure>
-
-![MPC GUI](Images/GUI.png){#fig:MPC_GUI}
+![MPCr GUI](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/MPC_params.png)
 
 At each time step, MPC solves a specific type of OLOC problem. To begin
 with, we need to consider the general open-loop optimal control problem
 formulation, which is presented in Lagrange form in
-Eq. [\[eq: Lagrange\]](#eq: Lagrange){reference-type="eqref"
-reference="eq: Lagrange"} [@herber2017advances; @herber2014dynamic].
+Eq. 1 [@herber2017advances; @herber2014dynamic].
 Here $t$ is time, $t_0$ is initial time, $t_f$ is final time,
-$\bm{u}(t)$ is the action (or control signal), $\bm \xi(t)$ is the
-vector of state variables, $\mathcal{\bm C}(\cdot)$ is the path
-constraint, and $\mathcal{\bm \phi}(\cdot)$ is the boundary constraint.
+$\mathbf{u}(t)$ is the action (or control signal), $\mathbf \xi(t)$ is the
+vector of state variables, $\mathcal{\mathbf C}(\cdot)$ is the path
+constraint, and $\mathcal{\mathbf \phi}(\cdot)$ is the boundary constraint.
 
 $$\begin{aligned}
-    \label{eq: Lagrange}
-    \min_{\bm u(t)} \int^{t_f}_{t_0} &\bm{\mathcal{L}}\left(t,\bm\xi(t),\bm u(t) \right)dt \\
+    \min_{\mathbf u(t)} \int^{t_f}_{t_0} &\mathbf{\mathcal{L}}\left(t,\mathbf\xi(t),\mathbf u(t) \right)dt \\
     &\mathrm{Subject\,\, to:}\nonumber \\
-    &\dot{\bm \xi}-\bm f\left(t,\bm \xi(t),\bm u(t)\right)=0\nonumber \\
-    &\mathcal{\bm C}\left( t,\bm\xi(t),\bm u(t) \right)\le0\nonumber \\
-    &\mathcal{\bm \phi} \left(t_0,\bm \xi(t_0),t_f,\bm \xi(t_f) \right)\le 0\nonumber 
+    &\dot{\mathbf \xi}-\mathbf f\left(t,\mathbf \xi(t),\mathbf u(t)\right)=0\nonumber \\
+    &\mathcal{\mathbf C}\left( t,\mathbf\xi(t),\mathbf u(t) \right)\le0\nonumber \\
+    &\mathcal{\mathbf \phi} \left(t_0,\mathbf \xi(t_0),t_f,\mathbf \xi(t_f) \right)\le 0\nonumber 
 \end{aligned}$$
 
 MPC differs from the general OLOC problem formulation primarily in the
 time intervals used, and in the assumed shape of the control signal at
 times other than $T_s$. In open-loop optimal control, the problem is
-solved once to obtain $\bm u(t)$ for all values of $t$ between $t_0$ and
+solved once to obtain $\mathbf u(t)$ for all values of $t$ between $t_0$ and
 $t_f$. In contrast, MPC is solved many times to provide updated control
 signal values that can adapt to uncertainty and model error.
 
@@ -242,100 +234,73 @@ $$\begin{aligned}
     n_{\mathrm{iterations}}=\frac{t_f}{T_S}%+1
 \end{aligned}$$
 
-The basic MPC procedure is expressed in Algorithm
-[\[alg:mpc\]](#alg:mpc){reference-type="eqref" reference="alg:mpc"}. At
+The basic MPC procedure is expressed in Algorithm 1. At
 each time step, starting with $t=0$ and ending with $t=t_f-T_s$, the
 `for` loop is executed to obtain $\mathbf{u}(t)$. This control signal is
 then fed to the physical system actuators, and the resulting state value
 is measured at the next time step $t+T_s$ and used to form the
 optimization problem for the next MPC iteration. At each MPC iteration
 the time interval over which the optimization problem is solved is
-$\left[t^{\mathrm{initial}}_{\mathrm{iter}},t^{\mathrm{end}}_{\mathrm{iter}} \right]$,
-the boundaries of which are defined in Algorithm
-[\[alg:mpc\]](#alg:mpc){reference-type="eqref" reference="alg:mpc"}. The
-length of the control horizon is $mT_s$ or
-$t_f - t^{\mathrm{initial}}_{\mathrm{iter}}$, whichever is shorter. The
-prediction horizon is of length $pT_s$ or
-$t_f - t^{\mathrm{initial}}_{\mathrm{iter}}$, whichever is shorter.
+$t^{initial}$,
+the boundaries of which are defined in Algorithm 1. The length of the control horizon is $t_f-t^{initial}$ or, whichever is shorter. The
+prediction horizon is of length $p T_s$ or
+$t_f - t^{initial}_{iter}$, whichever is shorter.
 
-::: algorithm
-::: algorithmic
-$t^{\mathrm{initial}}_{\mathrm{iter}} \gets ({\mathrm{iter}}-1)T_s$
-$t^{\mathrm{end}}_{\mathrm{iter}} \gets \min(t_f,t^{\mathrm{initial}}_{\mathrm{iter}}+pT_s)$
-$t^{\mathrm{Control}}_{\mathrm{iter}} \gets \min\left(t_f,t^{\mathrm{initial}}_{\mathrm{iter}}+mT_s\right)$
-**obtain** $\bm{\xi}\left(t^{\mathrm{initial}}_{\mathrm{iter}}\right)$
-**solve** Eq. [\[eq: MPC_iter\]](#eq: MPC_iter){reference-type="eqref"
-reference="eq: MPC_iter"} for $\bm{U}_*$ **output**
-$\hat{\bm{u}}\left(t^{\mathrm{initial}}_{\mathrm{iter}}+T_s\right)$
-:::
-:::
+![MPCre GUI](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/Alg.png
+)
 
 After initializing these time intervals and obtaining the current state
-value $\bm{\xi}\left(t^{\mathrm{initial}}_{\mathrm{iter}}\right)$ (using
+value $\mathbf{\xi}({t^{initial}})$ (using
 estimation if required), the optimization problem for MPC iteration
 `iter`, defined in
-Eq. [\[eq: MPC_iter\]](#eq: MPC_iter){reference-type="eqref"
-reference="eq: MPC_iter"}, is solved for the optimal control signal
-values $\bm{U}_*$, which is a matrix that includes the optimal control
+Eq.2, is solved for the optimal control signal
+values $\mathbf{U}$, which is a matrix that includes the optimal control
 signal at each discrete time step between
-$t^{\mathrm{initial}}_{\mathrm{iter}}$ and
-$t^{\mathrm{Control}}_{\mathrm{iter}}$. At times between sample points
+$t^{initial}$ and $t^{Control}$. At times between sample points
 the control signal is equal to that of the most recent sample time.
-After solution, the appropriate value from $\bm{U}_*$ is then used as
+After solution, the appropriate value from $\mathbf{U}$ is then used as
 the control input to the physical system actuators. The dynamic system
 continues to evolve, and at the next time step the process is repeated.
 
-$$\label{eq: MPC_iter}
-    \begin{gathered}
-        \min_{\bm U} \int^{t^{\mathrm{end}}_{\mathrm{iter}}}_{t^{\mathrm{initial}}_{\mathrm{iter}}} \bm{\mathcal{L}}\left(t,\bm\xi(t),\bm u(t) \right)dt \\
+$$  \begin{aligned}
+        \min_{\mathbf U} \int^{t^{end}_{iter}}_{t^{initial}_{iter}} \mathbf{\mathcal{L}}\left(t,\mathbf\xi(t),\mathbf u(t) \right)dt \\
         \mathrm{Subject\, to:}\\
-        \mathcal{\bm C}(t, \bm \xi (t), \bm u (t)) \le 0\\
-        \mathcal{\bm \phi}(t_0,\bm \xi (t_0), t_f, \bm \xi (t_f))\le 0\\
+        \mathcal{\mathbf C}(t, \mathbf \xi (t), \mathbf u (t)) \le 0\\
+        \mathcal{\mathbf \phi}(t_0,\mathbf \xi (t_0), t_f, \mathbf \xi (t_f))\le 0\\
         \mathrm{Where}\\
-        \dot{\bm \xi}=\hat{\bm f}(t,\bm \xi (t) , \bm u (t))
-    \end{gathered}$$
+        \dot{\mathbf \xi}=\hat{\mathbf f}(t,\mathbf \xi (t) , \mathbf u (t))
+    \end{aligned}$$
 
 Please note that in
-Eq. [\[eq: MPC_iter\]](#eq: MPC_iter){reference-type="eqref"
-reference="eq: MPC_iter"} a distinction is made between the dynamic
+Eq. 2 a distinction is made between the dynamic
 model of the system used for real-time computation, represented using
-the state space model $\dot{\bm{\xi}} = \hat{\bm{f}}(\cdot)$, and the
+the state space model $\dot{\mathbf{\xi}} = \hat{\mathbf{f}}(\cdot)$, and the
 true system dynamics, represented using model
-$\dot{\bm{\xi}} = {\bm{f}}(\cdot)$. A tradeoff exists between the
+$\dot{\mathbf{\xi}} = {\mathbf{f}}(\cdot)$. A tradeoff exists between the
 accuracy of the real-time dynamic model and the computational expense of
 solving the MPC optimization problem.
 
 A graphical visualization of the MPC process is illustrated in
-Fig. [2](#fig:MPC_loop){reference-type="ref" reference="fig:MPC_loop"}.
-Each iteration minimizes the objective within the corresponding time
+Fig.2. Each iteration minimizes the objective within the corresponding time
 window while satisfying dynamic equations, path constraints, and
 boundary conditions. After convergence, the control is applied to the
 system, and `iter` is increased by 1. In this representation we have
 assumed full access to all states, so no state estimation is necessary.
 Additionally, the dynamic equation may be formulated differently
 depending on the method used to solve the MPC problem. This will be
-elaborated upon in Section [1.2](#sec:Methods){reference-type="ref"
-reference="sec:Methods"}, where we discuss different methods to solve
-MPC problems.
+elaborated upon later.
 
-![Schematic illustrating the iterative MPC process. At each iteration,
-the optimization problem is solved using a nonlinear programming
-algorithm while satisfying constraints and system model dynamics
-($\dot{\bm{\xi}} = \hat{\bm{f}}(\cdot)$). When it converges, the first
-time step of the controller is applied to the real plant
-($\dot{\bm{\xi}} = {\bm{f}}(\cdot)$).](Images/MPC_diagram_cropped.pdf){#fig:MPC_loop}
+![MPCre GUI](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/MPC_Loop.png
+)
 
-## Methods to solve MPC {#sec:Methods}
+## Methods to solve MPC
 
 As mentioned earlier, the MPC problem is similar to the open-loop
 optimal control problem in many ways. This section discusses different
 methods used to solve open-loop optimal control problems. These methods,
 alongside their advantages and disadvantages, are shown in
-Fig.[3](#fig:Comp_Methods){reference-type="ref"
-reference="fig:Comp_Methods"}. The first main method is "Direct" or
-"Discretize then optimize", where the problem in
-Eq.[\[eq: Lagrange\]](#eq: Lagrange){reference-type="ref"
-reference="eq: Lagrange"} is discretized, and then a Non-Linear Program
+Fig.3. The first main method is "Direct" or
+"Discretize then optimize", where the problem in Eq 2 is discretized, and then a Non-Linear Program
 (NLP) is used to solve the optimization problem. The second main method
 is "Indirect", or "optimize then discretize", where Pontryagin's Maximum
 Principle (PMP) or Calculus of Variation (CV) is used to derive
@@ -366,42 +331,19 @@ high-order global polynomials such as lagrange functions are used, and
 discretized nodes are not distributed evenly but rather obtained through
 some methods such as roots of Legendre polynomials.
 
-![Schematics showing different Methods of solving MPC problems. In
-"direct" methods, an NLP solver is used to solve the problem, while in
-"indirect" methods, Pontryagin's Maximum Principle (PMP) or Calculus of
-Variation (CV) is utilized. The direct method consists of sequential and
-simultaneous methods. In the sequential method, only control is
-discretized, and dynamics are satisfied through simulation, while in the
-simultaneous method, control and states are discretized, and dynamics
-are satisfied through defect constraints ($\zeta$) handled by the
-optimization algorithm. The sequential method involves single shooting
-and multiple shooting methods. In single shooting, just one interval is
-used. However, in multiple shooting, the interval is divided into
-several sections, and in addition to control, the state at the initial
-of each section is a design variable and is satisifed through defect
-constraint. The simultaneous method involves single-step and
-pseudospectral methods. Low order polynomials are used in the single
-shooting, while in pseudospectral, high order global methods are
-utilized. The main idea of plotting the shape of methdos in this way is
-obtaiend from
-@herber2014dynamic.](Images/Compare_Methods.drawio.pdf){#fig:Comp_Methods}
-
 There is a main difference between the optimal control problem for
 sequential and simultaneous approaches. The problem formulation for the
 simultaneous approach was shown in
-Eq.[\[eq: Lagrange\]](#eq: Lagrange){reference-type="ref"
-reference="eq: Lagrange"}. There, dynamic equations are viewed as defect
+Eq.3. There, dynamic equations are viewed as defect
 constraints ($/zeta$), and for optimization, they will be treated as
 path constraints. However, this is different in the sequential method,
-as shown in Eq.[\[eq: MPC_iter\]](#eq: MPC_iter){reference-type="ref"
-reference="eq: MPC_iter"} [@herber2017advances; @herber2014dynamic]. As
+as shown in Eq. 4. As
 we see, the dynamic is not considered as a constraint, but by having
 control signals through discretization nodes, the dynamic response can
 be obtained by simulation, and that's why it is shown under "where".
 
 A comparison of the advantages and disadvantages of each method can be
-found in Fig.[3](#fig:Comp_Methods){reference-type="ref"
-reference="fig:Comp_Methods"}. In this study "Single-Shooting" method is
+found in Fig. 5. In this study "Single-Shooting" method is
 used. Even though there are more powerful approaches than
 Single-Shooting, there are two reasons why Single-Shooting seems to make
 more sense in this case: first, the prediction horizon in MPC is usually
@@ -415,7 +357,10 @@ is used. However, if more advanced algorithms that work well for large
 problems like "IPOPT' and "SNOPT" are utilized, then other methods like
 simultaneous that generate large but sparse NLP problems can be used.
 
-## Kalman Filter {#sec:Kalman}
+![MPCred GUI](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/MPC_Methods.png
+)
+
+## Kalman Filter
 
 Usually, in engineering systems, state estimation is necessary because
 we cannot access all states, or even if accessing all states was
@@ -427,8 +372,7 @@ provides a good state estimation even when there is measurement noise,
 disturbance noise, and mismatch between the model and measurement data.
 
 MPC and Kalman filter loop is shown in
-Fig.[4](#fig:MPC_and_Kalman){reference-type="ref"
-reference="fig:MPC_and_Kalman"}. Here $K$ is Kalamn gain, $H$ is system
+Fig. 4. Here $K$ is Kalamn gain, $H$ is system
 output matrix, $Q$ is process noise, $R$ is measurement noise, and $P$
 is estimation error covariance. $\hat{x}_{k|k-1}$ means state
 esdtimation at step $k$ given information up to $k-1$. Kalman filter has
@@ -438,29 +382,22 @@ to update the state during the update. It should be noted that the MPC
 code developed here works for any nonlinear system, but if the Kalman
 filter flag is activated, only linear systems should be used.
 
-![Schematic showing MPC and Kalman filter loop. An optimization problem
-is solved at each iteration while having a system model. Then the
-control at the initial time is applied to the real system, and the
-system output is obtained. After that, state estimation is done by the
-Kalman filter, and it goes to the next iteration. Here $A$ and $B$ show
-system dynamic matrices, $C$ is system output matrix, $\omega$ is
-process noise, $\nu$ is measurement noise, $Q$ is process noise
-covariance matrix, $R$ is measurement noise covariance matrix, $K$ is
-Kalman gain, and $P$ is estimation error
-covariance.](Images/g_4.pdf){#fig:MPC_and_Kalman}
+![MPCred GUI](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/Kalman.png
+)
 
-# Software Illustration {#sec:Software}
+# Software Illustration
 
 The code generated in this work can be used in Matlab by calling its
 function or by using the Graphical User Interface shown in
-Fig.[5](#fig:MPC_GUI){reference-type="ref" reference="fig:MPC_GUI"}. The
+Fig.5 The
 components that need to be defined in this code are shown in
-Fig.[6](#fig:Run_alg){reference-type="ref" reference="fig:Run_alg"}.
+Fig.6
 
-![MPC GUI](Images/GUI.png){#fig:MPC_GUI}
+![MPCred GUrI](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/GUI.png
+)
 
-![Different components of the MPC
-software](Images/2_Run_Algorithm.drawio.pdf){#fig:Run_alg}
+![MPCred GU2I](https://github.com/saeidb71/A-User-Friendly-Software-Based-on-Single-Shooting-to-Solve-Model-Predictive-Control-Problems/blob/main/Images/Structure.png
+)
 
 The structure of the components used to run this code is shown in
 Fig.[7](#fig:Code_struct){reference-type="ref"
